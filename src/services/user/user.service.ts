@@ -110,7 +110,11 @@ export const UserService = {
 		})
 	},
 
-	completeTask: async (telegramUserId: string, link: string) => {
+	completeTask: async (
+		telegramUserId: string,
+		link: string,
+		botName: string
+	) => {
 		const userCompletedTasksRef = ref(
 			database,
 			`users/${telegramUserId}/completedTasks`
@@ -121,7 +125,15 @@ export const UserService = {
 				? Object.values((await get(userCompletedTasksRef)).val())
 				: []
 
-		tasks.push(link)
+		// Добавляем новую задачу только если её ещё нет в списке
+		if (!tasks.includes(link)) {
+			tasks.push(link)
+		}
+
+		// Добавляем botName, если он не пустой
+		if (botName && !tasks.includes(botName)) {
+			tasks.push(botName)
+		}
 
 		await update(userCompletedTasksRef, {
 			...tasks

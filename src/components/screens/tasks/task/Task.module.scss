@@ -50,6 +50,10 @@
 	}
 }
 
+.referralBackground {
+	@apply bg-gray-700
+	
+}
 .check {
 	@apply transition-all text-black;
 	stroke-dasharray: 30px;

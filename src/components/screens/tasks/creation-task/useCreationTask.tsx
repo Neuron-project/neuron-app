@@ -23,7 +23,8 @@ export const useCreationTask = () => {
 	const [isCreation, setIsCreation] = useState(false)
 	const { setPoints } = usePointsStore(state => state)
 	const [link, setLink] = useState('')
-	const [isBotTask, setIsBotTask] = useState(false) // Новое состояние для отслеживания задач на бота
+	const [isBotTask, setIsBotTask] = useState(false)
+	const [isRefOpen, setIsRefOpen] = useState(false)
 
 	const [step, setStep] = useState(1)
 
@@ -95,25 +96,82 @@ export const useCreationTask = () => {
 	const handleChangeLink = (e: ChangeEvent<HTMLInputElement>) => {
 		let value = e.target.value
 
+		// Проверка на пустое значение
 		if (value.length === 0) {
 			setLink('')
 			setValue('link', '')
+			setIsBotTask(false)
 			return
 		}
 
+		// Обработка ссылки для задачи по кнопке "REF"
+		if (isRefOpen) {
+			const value = e.target.value.trim() // Получаем ссылку из поля ввода
+
+			setLink(value)
+			setValue('link', value)
+
+			// Проверка, что реферальная ссылка содержит "start" или "startapp"
+			if (value.includes('start') || value.includes('startapp')) {
+				// Извлекаем юзернейм из реферальной ссылки
+				const username = value.split('/')[1] // Это будет имя после "t.me/" или аналогичной части
+
+				if (username) {
+					setLink(`@${username}`) // Сохраняем только юзернейм в линк
+					setValue('link', `@${username}`) // Обновляем значение в форме
+
+					setIsBotTask(true) // Устанавливаем задачу на бота
+				}
+			} else {
+				setIsBotTask(false) // Если не задача на бота, сбрасываем
+			}
+
+			return
+		}
+
+		// Обработка ссылки для обычной задачи по кнопке "Плюс/Минус"
+		// Если ссылка начинается с "t.me/", извлекаем юзернейм и добавляем "@" в начале
+		if (value.startsWith('t.me/')) {
+			const username = value.split('t.me/')[1]
+			if (username) {
+				setLink(`@${username}`)
+				setValue('link', `@${username}`)
+				setIsBotTask(false)
+				// Устанавливаем botName для обычной задачи
+				setValue('botName', `@${username}`)
+			}
+			return
+		}
+
+		// Добавляем "@" для остальных ссылок, если отсутствует префикс
 		if (!value.startsWith('@')) {
 			value = '@' + value
 		}
 
-		// Проверяем, если значение заканчивается на 'bot', чтобы установить состояние
-		if (value.endsWith('bot')) {
+		// Проверка на задачи с ботами для обычной ссылки
+		if (value.includes('start') || value.includes('startapp')) {
+			const botUsername = value.split('/').slice(3, 4)[0]
+			setLink(`@${botUsername}`)
+			setValue('link', `@${botUsername}`)
 			setIsBotTask(true)
+			// Устанавливаем botName для задачи на бота
+			setValue('botName', `@${botUsername}`);
+
+		} else if (value.endsWith('bot')) {
+			setLink(value.trim())
+			setValue('link', value.trim())
+			// Устанавливаем botName для задачи на бота
+			setValue('botName', value.trim());
+			setIsBotTask(true)
+
 		} else {
+			setLink(value.trim())
+			setValue('link', value.trim())
+			// Устанавливаем botName для канала
+			setValue('botName', value.trim());
 			setIsBotTask(false)
 		}
 
-		setLink(value.trim())
-		setValue('link', value.trim())
 		console.log('Updated link:', value.trim()) // Логирование
 	}
 
@@ -128,7 +186,11 @@ export const useCreationTask = () => {
 				return (
 					<Field
 						value={link}
-						placeholder='@task_channel or @bot'
+						placeholder={
+							isRefOpen
+								? 'https://t.me/your_bot_username'
+								: '@task_channel or @bot'
+						}
 						type='text'
 						{...register('link', { required: true })}
 						onChange={handleChangeLink}
@@ -194,11 +256,12 @@ export const useCreationTask = () => {
 
 	const renderStepTitle = () => {
 		switch (step) {
-			case 1: {
-				return 'Add link to public group/bot or channel'
-			}
+			case 1:
+				return isRefOpen
+					? 'Add referral link to bot'
+					: 'Add link to task bot or channel' // Заголовок для шага 1
 			case 2: {
-				return (
+				return !isBotTask ? (
 					<>
 						Add{' '}
 						<span onClick={handlerCopyBot} className='font-bold cursor-pointer'>
@@ -206,6 +269,8 @@ export const useCreationTask = () => {
 						</span>{' '}
 						to task channel with admin role
 					</>
+				) : (
+					'Verify your link'
 				)
 			}
 			case 3: {
@@ -215,8 +280,11 @@ export const useCreationTask = () => {
 	}
 	return {
 		register,
+		setLink,
 		isCreation,
 		setIsCreation,
+		setIsRefOpen, // Возвращаем setIsRefOpen, чтобы менять это состояние
+		isRefOpen, // Возвращаем состояние isRefOpen, чтобы использовать его в компоненте
 		handleSubmit, // Подключаем обработчик к форме
 		mutateDeploy,
 		mutateVerify,

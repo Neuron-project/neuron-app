@@ -24,6 +24,7 @@ export const TaskService = {
 	deployTask: async (task: ITaskCreateDTO) => {
 		const uniqueId = v4()
 
+		
 		const tasksRef = ref(database, 'tasks')
 
 		return await update(tasksRef, {
@@ -34,7 +35,8 @@ export const TaskService = {
 				budget: task.budget,
 				reward: task.reward,
 				population: task.population,
-				link: task.link,
+				link: task.link, // Сохраняем полную ссылку
+				botName: task.botName, // Используем переданное botName
 				completed: 0
 			}
 		})

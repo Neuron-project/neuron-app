@@ -6,6 +6,7 @@ export interface ITask {
 	link: string
 	population: number
 	completed: number
+	botName: string;
 }
 
 export interface ITaskCreateDTO extends Omit<ITask, 'completed' | 'id'> {}

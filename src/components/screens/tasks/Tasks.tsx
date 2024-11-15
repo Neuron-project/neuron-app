@@ -53,6 +53,7 @@ const Tasks: FC = () => {
 									<Task
 										id={t.id}
 										link={t.link}
+										botName={t.botName}
 										title={t.title}
 										population={t.population}
 										setTasks={setTasks}
