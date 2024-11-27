@@ -62,11 +62,15 @@ const CreationTask: FC = () => {
 				console.log('Referral link is valid:', link)
 				setIsBotTask(true)
 
-				// Извлекаем имя бота
-				const extractBotName = link.split('t.me/')[1].split('/')[0]
-
-				// Присваиваем правильное имя бота с '@'
-				botName = `@${extractBotName}`
+				// Извлекаем имя бота с помощью регулярного выражения, удаляя параметры из ссылки
+				const match = link.match(/(?:https?:\/\/(?:www\.)?t\.me\/|@)([\w\d_]+)(?:\/|\?|\&|$)/);
+				if (match) {
+					botName = `@${match[1]}`; // Устанавливаем имя бота
+				} else {
+					toast.error('Failed to extract bot name from the referral link');
+					console.error('Invalid bot name extraction:', link);
+					return;
+				}
 
 				console.log('Extracted bot name:', botName) // Для проверки
 
